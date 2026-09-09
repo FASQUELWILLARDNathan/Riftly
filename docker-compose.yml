@@ -1,0 +1,57 @@
+version: "3.9"
+
+# NOTE IMPORTANTE :
+# Ce docker-compose ne crée PAS de nouvelle base Postgres.
+# Il fait tourner le backend et le frontend en local/prod, connectés
+# à ta base Postgres existante sur le VPS via DATABASE_URL (.env).
+#
+# Si tu veux un Postgres LOCAL pour développer sans toucher au VPS
+# (ex: avec un dump de ta base), décommente le service "postgres_dev"
+# plus bas et pointe DATABASE_URL dessus à la place.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: lol_platform_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: lol_platform_frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+
+  # ── Optionnel : Postgres local pour dev, si tu ne veux pas taper
+  # directement sur le VPS pendant que tu développes ──
+  # postgres_dev:
+  #   image: postgres:16-alpine
+  #   container_name: lol_platform_db_dev
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: esportbot
+  #     POSTGRES_USER: dev
+  #     POSTGRES_PASSWORD: dev
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - pgdata_dev:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata_dev:
