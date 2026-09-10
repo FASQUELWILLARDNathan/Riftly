@@ -7,6 +7,7 @@ function required(name: string): string {
 export default defineNuxtConfig({
   compatibilityDate: "2026-09-10",
   devtools: { enabled: true },
+  modules: ["@pinia/nuxt"],
   css: ["~/styles/tokens.css"],
   runtimeConfig: {
     public: {
