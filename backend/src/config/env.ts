@@ -10,9 +10,14 @@ function required(name: string): string {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
+  host: required("HOST"),
   port: Number(process.env.PORT ?? 4000),
-  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
-  assetOrigin: process.env.ASSET_ORIGIN ?? "http://51.38.38.87:3070",
+  corsOrigin: required("CORS_ORIGIN"),
+  assetOrigin: required("ASSET_ORIGIN"),
+  assetSourceOrigin: required("ASSET_SOURCE_ORIGIN"),
+  apiUrl: required("API_URL"),
+  wsUrl: required("WS_URL"),
+  databaseUrl: required("DATABASE_URL"),
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
 };

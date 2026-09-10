@@ -1,9 +1,17 @@
-import { useRuntimeConfig } from "#imports";
-
-const API_URL = useRuntimeConfig().public.apiBase;
-const API_ORIGIN = new URL(API_URL).origin;
 const TOKEN_KEY = "lol-esports-auth-token";
+let apiUrl: string | null = null;
+let apiOrigin: string | null = null;
 let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;
+
+export function configureApi(baseUrl: string) {
+  apiUrl = baseUrl.replace(/\/$/, "");
+  apiOrigin = new URL(apiUrl).origin;
+}
+
+function getApiUrl() {
+  if (!apiUrl) throw new Error("Client API non initialisé");
+  return apiUrl;
+}
 
 function setAuthToken(token: string | null) {
   authToken = token;
@@ -14,11 +22,12 @@ function setAuthToken(token: string | null) {
 
 export function assetUrl(url: string | null): string | null {
   if (!url || !url.startsWith("/")) return url;
-  return `${API_ORIGIN}${url}`;
+  if (!apiOrigin) throw new Error("Client API non initialisé");
+  return `${apiOrigin}${url}`;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${getApiUrl()}${path}`, {
     ...options,
     credentials: "include", // envoie/reçoit le cookie httpOnly de session
     headers: {

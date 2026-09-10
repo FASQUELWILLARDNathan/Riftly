@@ -38,20 +38,5 @@ services:
       - /app/node_modules
     command: npm run dev -- --host
 
-  # ── Optionnel : Postgres local pour dev, si tu ne veux pas taper
-  # directement sur le VPS pendant que tu développes ──
-  # postgres_dev:
-  #   image: postgres:16-alpine
-  #   container_name: lol_platform_db_dev
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_DB: esportbot
-  #     POSTGRES_USER: dev
-  #     POSTGRES_PASSWORD: dev
-  #   ports:
-  #     - "5433:5432"
-  #   volumes:
-  #     - pgdata_dev:/var/lib/postgresql/data
-
 # volumes:
 #   pgdata_dev:
