@@ -1,10 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
 const API_ORIGIN = new URL(API_URL).origin;
 const TOKEN_KEY = "lol-esports-auth-token";
-let authToken = localStorage.getItem(TOKEN_KEY);
+let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;
 
 function setAuthToken(token: string | null) {
   authToken = token;
+  if (!import.meta.client) return;
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
 }
