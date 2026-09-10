@@ -6,7 +6,7 @@ import { attachLiveMatchesWebSocket } from "./websocket/liveMatches";
 const server = createServer(app);
 attachLiveMatchesWebSocket(server);
 
-server.listen(env.port, "127.0.0.1", () => {
-  console.log(`🚀 API prête sur http://localhost:${env.port}`);
-  console.log(`🔌 WebSocket matchs en direct sur ws://localhost:${env.port}/ws/matches`);
+server.listen(env.port, env.host, () => {
+  console.log(`🚀 API prête sur ${env.apiUrl}`);
+  console.log(`🔌 WebSocket matchs en direct sur ${env.wsUrl}`);
 });

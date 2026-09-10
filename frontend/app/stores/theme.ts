@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 
 export const useThemeStore = defineStore("theme", {
   state: () => ({
-    theme: (localStorage.getItem("theme") as "dark" | "light") ?? "dark",
+    theme: (import.meta.client ? localStorage.getItem("theme") : null) as "dark" | "light" ?? "dark",
   }),
   actions: {
     toggle() {
@@ -10,6 +10,7 @@ export const useThemeStore = defineStore("theme", {
       this.apply();
     },
     apply() {
+      if (!import.meta.client) return;
       document.documentElement.setAttribute("data-theme", this.theme);
       localStorage.setItem("theme", this.theme);
     },

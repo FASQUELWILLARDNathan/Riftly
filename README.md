@@ -58,10 +58,16 @@ d'un `\d` réel.
 
 ```bash
 cd frontend
-cp ../.env.example .env   # seules les variables VITE_* sont utilisées ici
+cp ../.env.example .env   # les variables NUXT_PUBLIC_* configurent le frontend
 npm install
-npm run dev                # démarre sur http://localhost:5173
+npm run dev                # démarre sur http://localhost:3000
 ```
+
+Les adresses utilisées par Nuxt et le backend sont obligatoirement définies
+dans les fichiers `.env`. En local, utilise les valeurs de `.env.example`.
+Sur le VPS avant `npm run build`, renseigne dans l'environnement de production
+`NUXT_PUBLIC_API_BASE`, `NUXT_PUBLIC_SITE_URL`, `API_URL`, `WS_URL`, `HOST`,
+`CORS_ORIGIN`, `ASSET_ORIGIN` et `ASSET_SOURCE_ORIGIN` avec les valeurs du VPS.
 
 ## Démarrage — avec Docker
 

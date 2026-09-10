@@ -1,21 +1,43 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
-const API_ORIGIN = new URL(API_URL).origin;
 const TOKEN_KEY = "lol-esports-auth-token";
-let authToken = localStorage.getItem(TOKEN_KEY);
+let apiUrl: string | null = null;
+let apiOrigin: string | null = null;
+let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export function configureApi(baseUrl: string) {
+  apiUrl = baseUrl.replace(/\/$/, "");
+  apiOrigin = new URL(apiUrl).origin;
+}
+
+function getApiUrl() {
+  if (!apiUrl) throw new Error("Client API non initialisé");
+  return apiUrl;
+}
 
 function setAuthToken(token: string | null) {
   authToken = token;
+  if (!import.meta.client) return;
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
 }
 
 export function assetUrl(url: string | null): string | null {
   if (!url || !url.startsWith("/")) return url;
-  return `${API_ORIGIN}${url}`;
+  if (!apiOrigin) throw new Error("Client API non initialisé");
+  return `${apiOrigin}${url}`;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${getApiUrl()}${path}`, {
     ...options,
     credentials: "include", // envoie/reçoit le cookie httpOnly de session
     headers: {
@@ -27,7 +49,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Erreur API (${res.status})`);
+    throw new ApiError(body.error ?? `Erreur API (${res.status})`, res.status);
   }
 
   if (res.status === 204) return undefined as T;

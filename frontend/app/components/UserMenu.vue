@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -41,12 +40,12 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
     <Transition name="dropdown">
       <div v-if="open" class="dropdown">
-        <RouterLink to="/profil" class="item" @click="close">
+        <NuxtLink to="/profil" class="item" @click="close">
           <span class="icon">👤</span> Mon profil
-        </RouterLink>
-        <RouterLink to="/profil/parametres" class="item" @click="close">
+        </NuxtLink>
+        <NuxtLink to="/profil/parametres" class="item" @click="close">
           <span class="icon">⚙️</span> Gestion du profil
-        </RouterLink>
+        </NuxtLink>
         <div class="divider"></div>
         <button class="item danger" @click="logout">
           <span class="icon">↪</span> Déconnexion

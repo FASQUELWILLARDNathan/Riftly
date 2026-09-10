@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { MatchSummary } from "../api/client";
+import type { MatchSummary } from "@/api/client";
 
 const props = defineProps<{ match: MatchSummary }>();
 
@@ -17,7 +17,7 @@ const formattedDate = computed(() => {
 </script>
 
 <template>
-  <RouterLink :to="`/matchs/${match.id}`" class="card">
+  <NuxtLink :to="`/matchs/${match.id}`" class="card">
     <div class="card-top">
       <span class="region font-mono">{{ match.region }}</span>
       <span class="date font-mono">{{ formattedDate }}</span>
@@ -39,7 +39,7 @@ const formattedDate = computed(() => {
         {{ match.finished ? "Terminé" : "À venir" }}
       </span>
     </div>
-  </RouterLink>
+  </NuxtLink>
 </template>
 
 <style scoped>

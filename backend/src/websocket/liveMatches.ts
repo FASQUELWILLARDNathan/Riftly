@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { Server } from "http";
 import { Client } from "pg";
+import { env } from "../config/env";
 
 /**
  * Relais temps réel pour le site : on écoute le MÊME canal PostgreSQL
@@ -30,7 +31,7 @@ export function attachLiveMatchesWebSocket(server: Server) {
   }
 
   async function startListener() {
-    const pgClient = new Client({ connectionString: process.env.DATABASE_URL });
+    const pgClient = new Client({ connectionString: env.databaseUrl });
 
     try {
       await pgClient.connect();

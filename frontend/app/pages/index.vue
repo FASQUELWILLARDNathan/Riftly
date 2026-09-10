@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { api, type MatchSummary } from "../api/client";
-import MatchCard from "../components/MatchCard.vue";
+import { api, type MatchSummary } from "@/api/client";
+import MatchCard from "@/components/MatchCard.vue";
 
 const upcoming = ref<MatchSummary[]>([]);
 const loading = ref(true);
@@ -29,18 +29,21 @@ onMounted(async () => {
       Résultats, confrontations directes et prédictions statistiques pour la scène compétitive
       League of Legends — sans le bruit des articles.
     </p>
-    <RouterLink to="/matchs" class="cta">Voir tous les matchs →</RouterLink>
+
+    <!-- RouterLink devient NuxtLink -->
+    <NuxtLink to="/matchs" class="cta">Voir tous les matchs →</NuxtLink>
   </section>
 
   <section class="section">
     <div class="section-head">
       <h2 class="font-display">Prochains matchs</h2>
-      <RouterLink to="/matchs">Tout voir</RouterLink>
+      <NuxtLink to="/matchs">Tout voir</NuxtLink>
     </div>
 
     <p v-if="loading" class="muted">Chargement des matchs…</p>
     <p v-else-if="error" class="muted">{{ error }}</p>
     <p v-else-if="!upcoming.length" class="muted">Aucun match à venir pour le moment.</p>
+
     <div v-else class="grid">
       <MatchCard v-for="m in upcoming" :key="m.id" :match="m" />
     </div>

@@ -3,3 +3,8 @@ dist/
 .env
 *.log
 progress.json
+
+# Nuxt 4 outputs
+.nuxt/
+.output/
+node_modules/
