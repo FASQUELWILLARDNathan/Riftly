@@ -11,14 +11,9 @@
   },
   "dependencies": {
     "nuxt": "^4.0.0",
-    "pinia": "^2.2.4",
-    "vue": "^3.5.10",
-    "vue-router": "^4.4.5"
+    "pinia": "^2.2.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.4",
-    "typescript": "^5.6.2",
-    "vite": "^5.4.8",
-    "vue-tsc": "^2.1.6"
+    "typescript": "^5.6.2"
   }
 }
