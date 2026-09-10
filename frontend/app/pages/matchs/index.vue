@@ -3,6 +3,20 @@ import { onMounted, ref } from "vue";
 import { api, type MatchSummary } from "@/api/client";
 import MatchCard from "@/components/MatchCard.vue";
 
+const siteUrl = useRuntimeConfig().public.siteUrl;
+
+useSeoMeta({
+  title: "Matchs LoL esport - RiftData",
+  description: "Calendrier des matchs League of Legends : matchs a venir, en direct et termines.",
+  ogTitle: "Matchs LoL esport - RiftData",
+  ogDescription: "Calendrier des matchs League of Legends : matchs a venir, en direct et termines.",
+  ogType: "website",
+  ogUrl: () => `${siteUrl}/matchs`,
+  twitterCard: "summary",
+});
+
+useHead({ link: [{ rel: "canonical", href: `${siteUrl}/matchs` }] });
+
 const matches = ref<MatchSummary[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);

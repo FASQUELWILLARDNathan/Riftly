@@ -3,6 +3,20 @@ import { onMounted, ref } from "vue";
 import { api, type MatchSummary } from "@/api/client";
 import MatchCard from "@/components/MatchCard.vue";
 
+const siteUrl = useRuntimeConfig().public.siteUrl;
+
+useSeoMeta({
+  title: "RiftData - Stats et predictions LoL esport",
+  description: "Resultats, statistiques, confrontations et predictions pour la scene competitive League of Legends.",
+  ogTitle: "RiftData - Stats et predictions LoL esport",
+  ogDescription: "Resultats, statistiques, confrontations et predictions pour la scene competitive League of Legends.",
+  ogType: "website",
+  ogUrl: siteUrl,
+  twitterCard: "summary",
+});
+
+useHead({ link: [{ rel: "canonical", href: siteUrl }] });
+
 const upcoming = ref<MatchSummary[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);

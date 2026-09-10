@@ -2,6 +2,20 @@
 import { onMounted, ref } from "vue";
 import { api, type TeamSummary, assetUrl } from "@/api/client";
 
+const siteUrl = useRuntimeConfig().public.siteUrl;
+
+useSeoMeta({
+  title: "Equipes LoL esport - RiftData",
+  description: "Explore les equipes professionnelles de League of Legends et leurs statistiques.",
+  ogTitle: "Equipes LoL esport - RiftData",
+  ogDescription: "Explore les equipes professionnelles de League of Legends et leurs statistiques.",
+  ogType: "website",
+  ogUrl: () => `${siteUrl}/equipes`,
+  twitterCard: "summary",
+});
+
+useHead({ link: [{ rel: "canonical", href: `${siteUrl}/equipes` }] });
+
 const teams = ref<TeamSummary[]>([]);
 const query = ref("");
 const loading = ref(true);

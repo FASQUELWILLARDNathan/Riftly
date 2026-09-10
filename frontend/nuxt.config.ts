@@ -7,7 +7,15 @@ function required(name: string): string {
 export default defineNuxtConfig({
   compatibilityDate: "2026-09-10",
   devtools: { enabled: true },
-  modules: ["@pinia/nuxt"],
+  modules: ["@pinia/nuxt", "@nuxtjs/sitemap"],
+  site: {
+    url: required("NUXT_PUBLIC_SITE_URL"),
+    name: "RiftData",
+  },
+  sitemap: {
+    exclude: ["/connexion"],
+    gzip: true,
+  },
   css: ["~/styles/tokens.css"],
   runtimeConfig: {
     public: {

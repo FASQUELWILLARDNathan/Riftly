@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /connexion
+
+Sitemap: https://neyznn.fr/sitemap.xml

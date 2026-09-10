@@ -6,6 +6,11 @@ import { useAuthStore } from "@/stores/auth";
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+useSeoMeta({
+  title: "Connexion - RiftData",
+  description: "Connecte-toi a ton espace RiftData pour retrouver tes pronostics et ton profil.",
+  robots: "noindex, nofollow",
+});
 const mode = ref<"login" | "register">(route.query.mode === "register" ? "register" : "login");
 const email = ref("");
 const username = ref("");
