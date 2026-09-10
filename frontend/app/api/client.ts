@@ -3,6 +3,16 @@ let apiUrl: string | null = null;
 let apiOrigin: string | null = null;
 let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export function configureApi(baseUrl: string) {
   apiUrl = baseUrl.replace(/\/$/, "");
   apiOrigin = new URL(apiUrl).origin;
@@ -39,7 +49,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Erreur API (${res.status})`);
+    throw new ApiError(body.error ?? `Erreur API (${res.status})`, res.status);
   }
 
   if (res.status === 204) return undefined as T;

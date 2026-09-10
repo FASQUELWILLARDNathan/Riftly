@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { api, ApiError } from "@/api/client";
+
 interface MatchSummary {
   id: string;
   date: string | null;
@@ -115,15 +117,13 @@ async function vote(choice: 1 | 2) {
   voting.value = true;
   voteMessage.value = null;
   try {
-    await $fetch(`${apiBase}/predictions/vote`, {
-      method: "POST",
-      credentials: "include",
-      body: { matchId: matchId.value, predictedWinner: choice },
-    });
+    await api.predictions.vote(matchId.value, choice);
     userVote.value = choice;
     voteMessage.value = "Pronostic enregistré !";
   } catch (error) {
-    voteMessage.value = error instanceof Error ? error.message : "Impossible d'enregistrer le pronostic.";
+    voteMessage.value = error instanceof ApiError && error.status === 401
+      ? "Connecte-toi pour enregistrer ton pronostic."
+      : "Impossible d'enregistrer le pronostic pour le moment.";
   } finally {
     voting.value = false;
   }
