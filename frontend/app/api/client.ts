@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
+import { useRuntimeConfig } from "#imports";
+
+const API_URL = useRuntimeConfig().public.apiBase;
 const API_ORIGIN = new URL(API_URL).origin;
 const TOKEN_KEY = "lol-esports-auth-token";
 let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;

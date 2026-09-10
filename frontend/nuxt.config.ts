@@ -4,8 +4,8 @@ export default defineNuxtConfig({
   css: ["~/styles/tokens.css"],
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? "http://localhost:4000/api",
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? "https://neyznn.fr/api",
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? "https://neyznn.fr",
     },
   },
 });
