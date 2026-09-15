@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { publicAssetUrl } from "../../lib/assets";
 import { extractTeamNames, getRegionFromSeries } from "../../lib/region";
 
 export type MatchStatusFilter = "live" | "upcoming" | "finished";
@@ -40,10 +41,10 @@ async function attachTeamLogos<T extends { teams: string[] }>(items: T[]) {
     ...i,
     teamLogos: i.teams.map((name) => ({
       name,
-      logourl: byName.get(name)?.logourl ?? null,
-      logodarkurl: byName.get(name)?.logodarkurl ?? null,
-      textlesslogourl: byName.get(name)?.textlesslogourl ?? null,
-      textlesslogodarkurl: byName.get(name)?.textlesslogodarkurl ?? null,
+      logourl: publicAssetUrl(byName.get(name)?.logourl ?? null),
+      logodarkurl: publicAssetUrl(byName.get(name)?.logodarkurl ?? null),
+      textlesslogourl: publicAssetUrl(byName.get(name)?.textlesslogourl ?? null),
+      textlesslogodarkurl: publicAssetUrl(byName.get(name)?.textlesslogodarkurl ?? null),
     })),
   }));
 }
