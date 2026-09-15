@@ -56,6 +56,25 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+export interface TeamLogoInfo {
+  name: string;
+  logourl: string | null;
+  logodarkurl: string | null;
+  textlesslogourl: string | null;
+  textlesslogodarkurl: string | null;
+}
+
+export interface TeamSummary {
+  pageid: number;
+  name: string;
+  region: string | null;
+  logourl: string | null;
+  logodarkurl: string | null;
+  textlesslogourl: string | null;
+  textlesslogodarkurl: string | null;
+  status: string | null;
+}
+
 export interface MatchSummary {
   id: string;
   date: string | null;
@@ -66,15 +85,7 @@ export interface MatchSummary {
   winner: string | null;
   bestOf: number | null;
   teams: string[];
-}
-
-export interface TeamSummary {
-  pageid: number;
-  name: string;
-  region: string | null;
-  logourl: string | null;
-  textlesslogourl: string | null;
-  status: string | null;
+  teamLogos?: TeamLogoInfo[];
 }
 
 export const api = {

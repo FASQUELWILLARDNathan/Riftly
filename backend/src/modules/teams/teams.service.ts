@@ -8,19 +8,23 @@ export async function searchTeams(query?: string, take = 20) {
     orderBy: { name: "asc" },
     take,
     select: {
-      pageid: true,
-      name: true,
-      region: true,
-      logourl: true,
-      textlesslogourl: true,
-      status: true,
-    },
+    pageid: true,
+    name: true,
+    region: true,
+    logourl: true,
+    logodarkurl: true,
+    textlesslogourl: true,
+    textlesslogodarkurl: true,
+    status: true,
+  },
   });
 
   return teams.map((team) => ({
     ...team,
     logourl: publicAssetUrl(team.logourl),
+    logodarkurl: publicAssetUrl(team.logodarkurl),
     textlesslogourl: publicAssetUrl(team.textlesslogourl),
+    textlesslogodarkurl: publicAssetUrl(team.textlesslogodarkurl),
   }));
 }
 
@@ -53,7 +57,9 @@ export async function getTeamDetail(pageid: number) {
   return {
     ...team,
     logourl: publicAssetUrl(team.logourl),
+    logodarkurl: publicAssetUrl(team.logodarkurl),
     textlesslogourl: publicAssetUrl(team.textlesslogourl),
+    textlesslogodarkurl: publicAssetUrl(team.textlesslogodarkurl),
     stats: {
       wins,
       losses,

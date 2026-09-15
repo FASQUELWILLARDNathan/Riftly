@@ -58,7 +58,14 @@ onMounted(loadTeams);
   <p v-else-if="!teams.length" class="muted">Aucune équipe trouvée.</p>
   <div v-else class="grid">
     <article v-for="team in teams" :key="team.pageid" class="team-card">
-      <img v-if="assetUrl(team.logourl)" :src="assetUrl(team.logourl) ?? undefined" :alt="`Logo ${team.name}`" />
+      <TeamLogo
+        :name="team.name"
+        :logourl="assetUrl(team.logourl)"
+        :logodarkurl="assetUrl(team.logodarkurl)"
+        :textlesslogourl="assetUrl(team.textlesslogourl)"
+        :textlesslogodarkurl="assetUrl(team.textlesslogodarkurl)"
+        :size="56"
+      />
       <div>
         <h2 class="font-display">{{ team.name }}</h2>
         <p>{{ team.region ?? "Région inconnue" }}</p>

@@ -19,6 +19,35 @@ function toSummary(match: Awaited<ReturnType<typeof prisma.match.findFirstOrThro
   };
 }
 
+/** Récupère en une seule requête les logos de toutes les équipes présentes dans une liste de matchs. */
+async function attachTeamLogos<T extends { teams: string[] }>(items: T[]) {
+  const allNames = Array.from(new Set(items.flatMap((i) => i.teams)));
+  if (!allNames.length) return items.map((i) => ({ ...i, teamLogos: [] }));
+
+  const teams = await prisma.team.findMany({
+    where: { name: { in: allNames } },
+    select: {
+      name: true,
+      logourl: true,
+      logodarkurl: true,
+      textlesslogourl: true,
+      textlesslogodarkurl: true,
+    },
+  });
+  const byName = new Map(teams.map((t) => [t.name, t]));
+
+  return items.map((i) => ({
+    ...i,
+    teamLogos: i.teams.map((name) => ({
+      name,
+      logourl: byName.get(name)?.logourl ?? null,
+      logodarkurl: byName.get(name)?.logodarkurl ?? null,
+      textlesslogourl: byName.get(name)?.textlesslogourl ?? null,
+      textlesslogodarkurl: byName.get(name)?.textlesslogodarkurl ?? null,
+    })),
+  }));
+}
+
 /** Liste des matchs par statut, avec filtre optionnel équipe/région. */
 export async function listMatches(params: {
   statusFilter: MatchStatusFilter;
@@ -58,7 +87,8 @@ export async function listMatches(params: {
     ? matches.filter((m) => getRegionFromSeries(m.series, m.tournament).toUpperCase() === region.toUpperCase())
     : matches;
 
-  return filtered.map(toSummary);
+  const summaries = filtered.map(toSummary);
+  return attachTeamLogos(summaries);
 }
 
 /** Détail complet d'un match : infos + head-to-head + forme récente des deux équipes. */
@@ -138,4 +168,4 @@ async function getRecentForm(teamName: string, excludeObjectname: string, limit 
     });
 }
 
-export { getRecentForm, getHeadToHead };
+export { getRecentForm, getHeadToHead, attachTeamLogos };

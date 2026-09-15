@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { MatchSummary } from "@/api/client";
+import { assetUrl, type MatchSummary } from "@/api/client";
 
 const props = defineProps<{ match: MatchSummary }>();
 
 const teamA = computed(() => props.match.teams[0] ?? "TBD");
 const teamB = computed(() => props.match.teams[1] ?? "TBD");
+
+const logoA = computed(() => props.match.teamLogos?.[0] ?? null);
+const logoB = computed(() => props.match.teamLogos?.[1] ?? null);
 
 const winnerIndex = computed(() => (props.match.winner ? Number(props.match.winner) : null));
 
@@ -25,11 +28,27 @@ const formattedDate = computed(() => {
 
     <div class="matchup">
       <div class="team" :class="{ winner: winnerIndex === 1 }">
+        <TeamLogo
+          :name="teamA"
+          :logourl="assetUrl(logoA?.logourl ?? null)"
+          :logodarkurl="assetUrl(logoA?.logodarkurl ?? null)"
+          :textlesslogourl="assetUrl(logoA?.textlesslogourl ?? null)"
+          :textlesslogodarkurl="assetUrl(logoA?.textlesslogodarkurl ?? null)"
+          :size="28"
+        />
         <span class="team-name">{{ teamA }}</span>
       </div>
       <span class="vs font-display">VS</span>
-      <div class="team" :class="{ winner: winnerIndex === 2 }">
+      <div class="team team-right" :class="{ winner: winnerIndex === 2 }">
         <span class="team-name">{{ teamB }}</span>
+        <TeamLogo
+          :name="teamB"
+          :logourl="assetUrl(logoB?.logourl ?? null)"
+          :logodarkurl="assetUrl(logoB?.logodarkurl ?? null)"
+          :textlesslogourl="assetUrl(logoB?.textlesslogourl ?? null)"
+          :textlesslogodarkurl="assetUrl(logoB?.textlesslogodarkurl ?? null)"
+          :size="28"
+        />
       </div>
     </div>
 
@@ -88,16 +107,26 @@ const formattedDate = computed(() => {
   gap: 12px;
 }
 .team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 18px;
   color: var(--text-secondary);
+  min-width: 0;
 }
 .team.winner {
   color: var(--text-primary);
 }
-.team:last-child {
+.team-right {
+  justify-content: flex-end;
   text-align: right;
+}
+.team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .vs {
   color: var(--text-tertiary);
