@@ -35,7 +35,12 @@ const needsChip = computed(
 
 <template>
   <div class="team-logo" :class="{ chip: needsChip }" :style="{ width: `${size}px`, height: `${size}px` }">
-    <img v-if="src" :src="src" :alt="name" />
+    <img
+      v-if="src"
+      :src="src"
+      :alt="name"
+      :style="{ width: `${size}px`, height: `${size}px`, objectFit: 'contain', display: 'block' }"
+    />
     <span v-else class="placeholder font-display">{{ name.charAt(0) }}</span>
   </div>
 </template>
@@ -46,17 +51,18 @@ const needsChip = computed(
   place-items: center;
   border-radius: var(--radius-sm);
   flex-shrink: 0;
+  overflow: hidden; /* empêche tout débordement peu importe le ratio du logo source */
 }
 
 .team-logo img {
+  display: block;
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
-/* Fond clair neutre et fixe (pas lié aux tokens de thème) : le but est
-   justement d'offrir un fond constant et lisible peu importe le thème
-   actif, sans jamais recolorer le logo lui-même. */
 .team-logo.chip {
   background: #f4f5f3;
   padding: 15%;
