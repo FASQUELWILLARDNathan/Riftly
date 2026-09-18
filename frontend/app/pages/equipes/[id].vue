@@ -57,7 +57,7 @@ const { data: response, error } = await useFetch<ApiResponse<TeamDetail>>(
   {
     key: () => `team-${teamId.value}`,
     server: true,
-    lazy: false,
+    lazy: true,
   }
 );
 
@@ -197,7 +197,32 @@ useHead(() => ({
   </article>
 
   <p v-else-if="error" class="muted">{{ error.message }}</p>
-  <p v-else class="muted">Chargement de l'équipe...</p>
+  <article v-else class="team-page loading-page" aria-busy="true" aria-label="Chargement de l'équipe">
+    <header class="header">
+      <span class="loading-block loading-logo" aria-hidden="true"></span>
+      <div class="loading-heading" aria-hidden="true">
+        <span class="loading-block loading-title"></span>
+        <span class="loading-block loading-region"></span>
+      </div>
+    </header>
+
+    <div class="stats-row loading-stats" aria-hidden="true">
+      <div v-for="group in 2" :key="group" class="stats-group">
+        <span class="loading-block loading-stat-title"></span>
+        <div class="stats-items">
+          <span v-for="stat in 3" :key="stat" class="loading-stat">
+            <span class="loading-block loading-value"></span>
+            <span class="loading-block loading-label"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <section v-for="section in 2" :key="section" class="card loading-card" aria-hidden="true">
+      <span class="loading-block loading-section-title"></span>
+      <span v-for="row in 3" :key="row" class="loading-block loading-row"></span>
+    </section>
+  </article>
 </template>
 
 <style scoped>
@@ -319,6 +344,82 @@ h1 {
 .muted {
   color: var(--text-tertiary);
   font-size: 14px;
+}
+
+.loading-page {
+  pointer-events: none;
+}
+
+.loading-block {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-raised);
+  filter: blur(5px);
+  opacity: 0.72;
+  animation: loading-pulse 1.3s ease-in-out infinite alternate;
+}
+
+.loading-logo {
+  width: 64px;
+  height: 64px;
+}
+
+.loading-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.loading-title {
+  width: 190px;
+  height: 28px;
+}
+
+.loading-region {
+  width: 72px;
+  height: 13px;
+}
+
+.loading-stat-title {
+  width: 120px;
+  height: 18px;
+  margin-bottom: 16px;
+}
+
+.loading-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loading-value {
+  width: 42px;
+  height: 28px;
+}
+
+.loading-label {
+  width: 54px;
+  height: 12px;
+}
+
+.loading-card {
+  display: grid;
+  gap: 12px;
+}
+
+.loading-section-title {
+  width: 110px;
+  height: 20px;
+  margin-bottom: 4px;
+}
+
+.loading-row {
+  width: 100%;
+  height: 38px;
+}
+
+@keyframes loading-pulse {
+  from { opacity: 0.48; }
+  to { opacity: 0.9; }
 }
 
 @media (max-width: 640px) {

@@ -48,9 +48,9 @@ function getMatchResult(
   return null;
 }
 
-export async function searchTeams(query?: string, take = 20) {
+export async function searchTeams(query?: string, take = 100) {
   const teams = await prisma.team.findMany({
-    where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
+    where: query ? { name: { startsWith: query, mode: "insensitive" } } : undefined,
     orderBy: { name: "asc" },
     take,
     select: {

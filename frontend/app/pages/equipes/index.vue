@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { api, type TeamSummary, assetUrl } from "@/api/client";
 
 const siteUrl = useRuntimeConfig().public.siteUrl;
@@ -20,6 +20,7 @@ const teams = ref<TeamSummary[]>([]);
 const query = ref("");
 const loading = ref(true);
 const error = ref<string | null>(null);
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function loadTeams() {
   loading.value = true;
@@ -35,7 +36,15 @@ async function loadTeams() {
   }
 }
 
+function scheduleSearch() {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadTeams, 250);
+}
+
 onMounted(loadTeams);
+onBeforeUnmount(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <template>
@@ -48,7 +57,13 @@ onMounted(loadTeams);
   <form class="search" @submit.prevent="loadTeams">
     <label for="team-search">Rechercher une équipe</label>
     <div class="search-row">
-      <input id="team-search" v-model="query" type="search" placeholder="Nom de l'équipe" />
+      <input
+        id="team-search"
+        v-model="query"
+        type="search"
+        placeholder="Nom de l'équipe"
+        @input="scheduleSearch"
+      />
       <button type="submit">Rechercher</button>
     </div>
   </form>
