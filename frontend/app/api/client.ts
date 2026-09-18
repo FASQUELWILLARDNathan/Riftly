@@ -109,6 +109,8 @@ export const api = {
     myVote: (matchId: string) => request<{ data: { predictedWinner: 1 | 2 } | null }>(`/predictions/vote/${encodeURIComponent(matchId)}`),
     vote: (matchId: string, predictedWinner: 1 | 2) =>
       request(`/predictions/vote`, { method: "POST", body: JSON.stringify({ matchId, predictedWinner }) }),
+    getVote: (matchId: string) =>
+      request<{ data: { predictedWinner: number } | null }>(`/predictions/${encodeURIComponent(matchId)}/vote`),
   },
   auth: {
     login: async (email: string, password: string) => {

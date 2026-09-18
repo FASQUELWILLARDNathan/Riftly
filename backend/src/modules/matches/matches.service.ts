@@ -4,6 +4,51 @@ import { extractTeamNames, getRegionFromSeries } from "../../lib/region";
 
 export type MatchStatusFilter = "live" | "upcoming" | "finished";
 
+/** Trouve les objectnames des matchs impliquant une équipe, via ILIKE en SQL brut.
+ * Nécessaire car le filtre Prisma `string_contains` ne fonctionne pas correctement
+ * sur une colonne JSON qui contient un tableau (match2opponents), contrairement à
+ * une chaîne simple — il faut caster en texte côté SQL comme le faisait le bot Python. */
+async function findObjectnamesInvolvingTeam(
+  teamName: string,
+  opts: { finishedOnly?: boolean; excludeObjectname?: string } = {}
+): Promise<string[]> {
+
+  const currentYear = new Date().getFullYear();
+
+  const conditions: string[] = [
+    `match2opponents::text ILIKE $1`,
+    `pagename LIKE '%/${currentYear}/%'`
+  ];
+
+  const params: unknown[] = [`%${teamName}%`];
+  let idx = 2;
+
+  if (opts.finishedOnly) conditions.push(`finished = true`);
+
+  if (opts.excludeObjectname) {
+    conditions.push(`objectname != $${idx}`);
+    params.push(opts.excludeObjectname);
+    idx++;
+  }
+
+  const rows = await prisma.$queryRawUnsafe<{ objectname: string }[]>(
+    `SELECT objectname
+     FROM matches
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY date DESC
+     LIMIT 200`,
+    ...params
+  );
+
+  console.log("DEBUG SQL BRUT", {
+    teamName,
+    paramsUsed: params,
+    rowsFound: rows.length
+  });
+
+  return rows.map((r) => r.objectname);
+}
+
 function toSummary(match: Awaited<ReturnType<typeof prisma.match.findFirstOrThrow>>) {
   const teamNames = extractTeamNames(match.match2opponents);
   return {
@@ -116,19 +161,12 @@ export async function getMatchDetail(objectname: string) {
 
 /** Historique des confrontations directes entre deux équipes (matchs terminés, hors match courant). */
 async function getHeadToHead(teamA: string, teamB: string, excludeObjectname: string, limit = 10) {
-  // Filtre grossier en SQL (contient les deux noms), affiné en mémoire
-  // car le JSON peut contenir des variantes de nom (ex: "KC" vs "Karmine Corp").
+  const objectnamesA = await findObjectnamesInvolvingTeam(teamA, { finishedOnly: true, excludeObjectname });
+  if (!objectnamesA.length) return [];
+
   const candidates = await prisma.match.findMany({
-    where: {
-      finished: true,
-      objectname: { not: excludeObjectname },
-      AND: [
-        { match2opponents: { string_contains: teamA } as any },
-        { match2opponents: { string_contains: teamB } as any },
-      ],
-    },
+    where: { objectname: { in: objectnamesA } },
     orderBy: { date: "desc" },
-    take: limit * 3, // marge, on filtre ensuite précisément
   });
 
   return candidates
@@ -140,33 +178,54 @@ async function getHeadToHead(teamA: string, teamB: string, excludeObjectname: st
     .map(toSummary);
 }
 
-/** Forme récente d'une équipe : N derniers matchs terminés, victoires/défaites. */
-async function getRecentForm(teamName: string, excludeObjectname: string, limit = 10) {
+async function getRecentForm(
+  teamName: string,
+  excludeObjectname: string,
+  limit = 10
+) {
+  const objectnames = await findObjectnamesInvolvingTeam(teamName, {
+    finishedOnly: true,
+    excludeObjectname,
+  });
+
+  if (!objectnames.length) return [];
+
   const candidates = await prisma.match.findMany({
-    where: {
-      finished: true,
-      objectname: { not: excludeObjectname },
-      match2opponents: { string_contains: teamName } as any,
-    },
+    where: { objectname: { in: objectnames } },
     orderBy: { date: "desc" },
-    take: limit * 2,
+    take: limit,
   });
 
   return candidates
-    .filter((m) => extractTeamNames(m.match2opponents).includes(teamName))
-    .slice(0, limit)
     .map((m) => {
-      const names = extractTeamNames(m.match2opponents);
-      const teamIndex = names.indexOf(teamName); // 0-based
-      const won = m.winner === String(teamIndex + 1); // winner stocké en 1-based
+      const opponents = Array.isArray(m.match2opponents)
+        ? m.match2opponents
+        : JSON.parse(m.match2opponents as string);
+
+      const team = opponents.find(
+        (op: any) => op.name === teamName
+      );
+
+      if (!team) return null;
+
+      const opponent = opponents.find(
+        (op: any) => op.name !== teamName
+      );
+
+      const won =
+        Number(team.score) > Number(opponent?.score ?? -1);
+
       return {
         matchId: m.objectname,
         date: m.date,
         tournament: m.tournament,
-        opponent: names.find((n) => n !== teamName) ?? "Inconnu",
+        opponent: opponent?.name ?? "Inconnu",
         result: won ? "win" : "loss",
       };
-    });
+    })
+    .filter(
+      (m): m is NonNullable<typeof m> => m !== null
+    );
 }
 
 export { getRecentForm, getHeadToHead, attachTeamLogos };

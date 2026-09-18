@@ -5,9 +5,12 @@ import { prisma } from "../../lib/prisma";
 
 export async function getPrediction(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await predictionsService.predictMatch(req.params.matchId);
+    const [result, userVotes] = await Promise.all([
+      predictionsService.predictMatch(req.params.matchId),
+      predictionsService.getUserVoteBreakdown(req.params.matchId),
+    ]);
     if (!result) return res.status(404).json({ error: "Impossible de générer une prédiction pour ce match" });
-    res.json({ data: result });
+    res.json({ data: { ...result, userVotes } });
   } catch (err) {
     next(err);
   }

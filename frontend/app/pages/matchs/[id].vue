@@ -11,6 +11,7 @@ interface MatchSummary {
   winner: string | null;
   bestOf: number | null;
   teams: string[];
+  opponents?: unknown;
 }
 
 interface MatchHistory extends MatchSummary {
@@ -38,6 +39,13 @@ interface Prediction {
   favoredTeam: string;
   confidence: number;
   reasons: Record<string, Array<{ type: "positive" | "negative"; label: string }>>;
+  userVotes: {
+    totalVotes: number;
+    teamAVotes: number;
+    teamBVotes: number;
+    teamAPercent: number | null;
+    teamBPercent: number | null;
+  } | null;
 }
 
 const route = useRoute();
@@ -58,6 +66,17 @@ const match = computed(() => matchResponse.value?.data ?? null);
 const teamA = computed(() => match.value?.teams[0] ?? "Équipe A");
 const teamB = computed(() => match.value?.teams[1] ?? "Équipe B");
 
+function getTeamScore(opponents: unknown, teamName: string): number | null {
+  if (!Array.isArray(opponents)) return null;
+  const found = opponents.find((op: any) => op?.name === teamName || op?.teamtemplate?.name === teamName);
+  if (!found) return null;
+  const score = Number(found.score);
+  return Number.isNaN(score) || score < 0 ? null : score;
+}
+
+const teamAScore = computed(() => getTeamScore(match.value?.opponents, teamA.value));
+const teamBScore = computed(() => getTeamScore(match.value?.opponents, teamB.value));
+
 const { data: predictionResponse } = await useFetch<ApiResponse<Prediction>>(
   () => `${apiBase}/predictions/${encodeURIComponent(matchId.value)}`,
   {
@@ -72,6 +91,18 @@ const prediction = computed(() => predictionResponse.value?.data ?? null);
 const userVote = ref<1 | 2 | null>(null);
 const voting = ref(false);
 const voteMessage = ref<string | null>(null);
+
+const auth = useAuthStore();
+
+onMounted(async () => {
+  if (!auth.isAuthenticated) return;
+  try {
+    const { data } = await api.predictions.getVote(matchId.value);
+    if (data) userVote.value = data.predictedWinner as 1 | 2;
+  } catch {
+    // pas de vote existant, ou erreur réseau silencieuse : on laisse null
+  }
+});
 
 const formattedDate = computed(() => {
   if (!match.value?.date) return "Date à confirmer";
@@ -109,17 +140,15 @@ useHead(() => ({
 }));
 
 async function vote(choice: 1 | 2) {
-  if (userVote.value) {
-    voteMessage.value = `Tu as déjà voté pour ${userVote.value === 1 ? teamA.value : teamB.value}.`;
-    return;
-  }
+  if (userVote.value === choice) return; // déjà voté pour ce choix, rien à faire
 
+  const isChange = userVote.value !== null;
   voting.value = true;
   voteMessage.value = null;
   try {
     await api.predictions.vote(matchId.value, choice);
     userVote.value = choice;
-    voteMessage.value = "Pronostic enregistré !";
+    voteMessage.value = isChange ? "Pronostic mis à jour !" : "Pronostic enregistré !";
   } catch (error) {
     voteMessage.value = error instanceof ApiError && error.status === 401
       ? "Connecte-toi pour enregistrer ton pronostic."
@@ -140,7 +169,16 @@ async function vote(choice: 1 | 2) {
 
     <div class="matchup" aria-label="Affiche du match">
       <div class="team-block" :class="{ winner: match.winner === '1' }">{{ teamA }}</div>
-      <span class="vs font-display">VS</span>
+
+      <div class="center-info">
+        <span v-if="match.finished && teamAScore !== null && teamBScore !== null" class="score font-display">
+          <span :class="{ winner: match.winner === '1' }">{{ teamAScore }}</span>
+          <span class="score-sep">–</span>
+          <span :class="{ winner: match.winner === '2' }">{{ teamBScore }}</span>
+        </span>
+        <span v-else class="vs font-display">VS</span>
+      </div>
+
       <div class="team-block" :class="{ winner: match.winner === '2' }">{{ teamB }}</div>
     </div>
 
@@ -162,13 +200,25 @@ async function vote(choice: 1 | 2) {
         </div>
       </div>
 
+      <div v-if="prediction.userVotes && prediction.userVotes.totalVotes > 0" class="user-votes">
+        <p class="user-votes-label">Pronostics des utilisateurs ({{ prediction.userVotes.totalVotes }} votes)</p>
+        <div class="user-votes-bar">
+          <div class="bar-segment team-a" :style="{ width: `${prediction.userVotes.teamAPercent}%` }"></div>
+          <div class="bar-segment team-b" :style="{ width: `${prediction.userVotes.teamBPercent}%` }"></div>
+        </div>
+        <div class="user-votes-legend">
+          <span>{{ teamA }} — {{ prediction.userVotes.teamAPercent }}%</span>
+          <span>{{ teamB }} — {{ prediction.userVotes.teamBPercent }}%</span>
+        </div>
+      </div>
+
       <div v-if="!match.finished" class="vote-actions">
         <p class="vote-label">Ton pronostic :</p>
         <div class="vote-buttons">
-          <button :disabled="voting || userVote !== null" :class="{ selected: userVote === 1 }" @click="vote(1)">
+          <button :disabled="voting" :class="{ selected: userVote === 1 }" @click="vote(1)">
             {{ teamA }}<span v-if="userVote === 1"> — Ton vote</span>
           </button>
-          <button :disabled="voting || userVote !== null" :class="{ selected: userVote === 2 }" @click="vote(2)">
+          <button :disabled="voting" :class="{ selected: userVote === 2 }" @click="vote(2)">
             {{ teamB }}<span v-if="userVote === 2"> — Ton vote</span>
           </button>
         </div>
@@ -224,6 +274,10 @@ async function vote(choice: 1 | 2) {
 .team-block.winner { color: var(--text-primary); }
 .team-block:last-child { text-align: right; }
 .vs { color: var(--text-tertiary); }
+.center-info { display: flex; flex-direction: column; align-items: center; justify-content: center;}
+.score {display: flex;align-items: center;gap: 12px;font-size: 34px;font-weight: 700;color: var(--text-tertiary);}
+.score span.winner {color: var(--color-win);}
+.score-sep {font-weight: 400;color: var(--text-tertiary);font-size: 20px;}
 .card { margin-bottom: 20px; padding: 24px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); }
 .card h1, .card h2 { margin: 0 0 16px; font-size: 18px; }
 .favored { margin: 0 0 20px; font-size: 16px; }
@@ -245,5 +299,36 @@ async function vote(choice: 1 | 2) {
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-loss); }
 .dot.win { background: var(--color-win); }
 .muted { color: var(--text-tertiary); font-size: 14px; }
+.user-votes {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.user-votes-label {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.user-votes-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg-surface-raised);
+}
+.bar-segment.team-a {
+  background: var(--accent);
+}
+.bar-segment.team-b {
+  background: var(--color-gold);
+}
+.user-votes-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
 @media (max-width: 640px) { .header { flex-wrap: wrap; gap: 8px 12px; } .team-block { font-size: 22px; } .card { padding: 18px; } .match-list li { grid-template-columns: 1fr; gap: 4px; } }
 </style>

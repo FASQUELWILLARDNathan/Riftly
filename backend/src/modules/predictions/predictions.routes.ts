@@ -13,4 +13,7 @@ router.get("/vote/:matchId", requireAuth, predictionsController.getVote);
 // POST /api/predictions/vote  (privé : l'utilisateur enregistre son pronostic)
 router.post("/vote", requireAuth, predictionsController.postVote);
 
+// PUT /api/predictions/vote  (privé : l'utilisateur change son pronostic)
+router.get("/:matchId/vote", requireAuth, predictionsController.getVote);
+
 export default router;
