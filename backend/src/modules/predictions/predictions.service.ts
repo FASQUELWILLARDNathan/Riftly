@@ -33,6 +33,7 @@ async function getSeasonHeadToHead(
     `match2opponents::text ILIKE $1`,
     `match2opponents::text ILIKE $2`,
     `pagename LIKE $3`,
+    `game ILIKE 'leagueoflegends'`,
   ];
 
   const params: unknown[] = [
@@ -117,7 +118,12 @@ async function getSeasonHeadToHead(
  * a trop peu de matchs récents pour que la forme seule soit fiable.
  */
 export async function predictMatch(objectname: string): Promise<PredictionResult | null> {
-  const match = await prisma.match.findUnique({ where: { objectname } });
+  const match = await prisma.match.findFirst({
+    where: {
+      objectname,
+      game: { equals: "leagueoflegends", mode: "insensitive" },
+    },
+  });
   if (!match) return null;
 
   const [teamA, teamB] = extractTeamNames(match.match2opponents);
@@ -249,7 +255,12 @@ function buildReasons(
 
 /** Répartition des pronostics des utilisateurs du site pour un match donné. */
 export async function getUserVoteBreakdown(objectname: string): Promise<UserVoteBreakdown | null> {
-  const match = await prisma.match.findUnique({ where: { objectname } });
+  const match = await prisma.match.findFirst({
+    where: {
+      objectname,
+      game: { equals: "leagueoflegends", mode: "insensitive" },
+    },
+  });
   if (!match) return null;
 
   const votes = await prisma.webPrediction.findMany({ where: { matchObjectId: objectname } });

@@ -10,7 +10,13 @@ export async function getProfile(userId: string) {
 
   const [favorites, predictions] = await Promise.all([
     prisma.favorite.findMany({ where: { userId }, include: { team: true } }),
-    prisma.webPrediction.findMany({ where: { userId }, include: { match: true } }),
+    prisma.webPrediction.findMany({
+      where: {
+        userId,
+        match: { game: { equals: "leagueoflegends", mode: "insensitive" } },
+      },
+      include: { match: true },
+    }),
   ]);
 
   const settled = predictions.filter((p) => p.match.winner && p.match.winner !== "");

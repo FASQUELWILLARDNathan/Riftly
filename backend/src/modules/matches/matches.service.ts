@@ -18,6 +18,7 @@ async function findObjectnamesInvolvingTeam(
 ): Promise<string[]> {
   const conditions: string[] = [
     `match2opponents::text ILIKE $1`,
+    `game ILIKE 'leagueoflegends'`,
   ];
 
   const params: unknown[] = [`%${teamName}%`];
@@ -117,6 +118,8 @@ export async function listMatches(params: {
 
   const where: any = {};
 
+  where.game = { equals: "leagueoflegends", mode: "insensitive" };
+
   if (statusFilter === "finished") {
     where.finished = true;
   } else if (statusFilter === "upcoming") {
@@ -150,7 +153,12 @@ export async function listMatches(params: {
 
 /** Détail complet d'un match : infos + head-to-head + forme récente des deux équipes. */
 export async function getMatchDetail(objectname: string) {
-  const match = await prisma.match.findUnique({ where: { objectname } });
+  const match = await prisma.match.findFirst({
+    where: {
+      objectname,
+      game: { equals: "leagueoflegends", mode: "insensitive" },
+    },
+  });
   if (!match) return null;
 
   const teamNames = extractTeamNames(match.match2opponents);

@@ -31,7 +31,10 @@ export async function getPlayerDetail(pageid: bigint) {
   if (!player.team) return { ...player, recentMatches: [] };
 
   const matches = await prisma.match.findMany({
-    where: { match2opponents: { string_contains: player.team.name } as any },
+    where: {
+      game: { equals: "leagueoflegends", mode: "insensitive" },
+      match2opponents: { string_contains: player.team.name } as any,
+    },
     orderBy: { date: "desc" },
     take: 10,
   });
