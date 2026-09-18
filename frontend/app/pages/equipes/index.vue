@@ -57,7 +57,7 @@ onMounted(loadTeams);
   <p v-else-if="error" class="message error">{{ error }} Vérifie que l'API backend tourne sur le port 4000.</p>
   <p v-else-if="!teams.length" class="muted">Aucune équipe trouvée.</p>
   <div v-else class="grid">
-    <article v-for="team in teams" :key="team.pageid" class="team-card">
+    <NuxtLink v-for="team in teams" :key="team.pageid" :to="`/equipes/${team.pageid}`" class="team-card">
       <TeamLogo
         :name="team.name"
         :logourl="assetUrl(team.logourl)"
@@ -71,7 +71,7 @@ onMounted(loadTeams);
         <p>{{ team.region ?? "Région inconnue" }}</p>
         <span class="status">{{ team.status ?? "Statut inconnu" }}</span>
       </div>
-    </article>
+    </NuxtLink>
   </div>
 </template>
 

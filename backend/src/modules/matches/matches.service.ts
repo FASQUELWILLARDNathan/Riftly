@@ -228,4 +228,4 @@ async function getRecentForm(
     );
 }
 
-export { getRecentForm, getHeadToHead, attachTeamLogos };
+export { getRecentForm, getHeadToHead, attachTeamLogos, findObjectnamesInvolvingTeam };

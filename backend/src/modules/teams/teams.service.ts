@@ -1,31 +1,23 @@
 import { prisma } from "../../lib/prisma";
-import { publicAssetUrl } from "../../lib/assets";
 import { extractTeamNames } from "../../lib/region";
+import { findObjectnamesInvolvingTeam } from "../matches/matches.service";
 
 export async function searchTeams(query?: string, take = 20) {
-  const teams = await prisma.team.findMany({
+  return prisma.team.findMany({
     where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
     orderBy: { name: "asc" },
     take,
     select: {
-    pageid: true,
-    name: true,
-    region: true,
-    logourl: true,
-    logodarkurl: true,
-    textlesslogourl: true,
-    textlesslogodarkurl: true,
-    status: true,
-  },
+      pageid: true,
+      name: true,
+      region: true,
+      logourl: true,
+      logodarkurl: true,
+      textlesslogourl: true,
+      textlesslogodarkurl: true,
+      status: true,
+    },
   });
-
-  return teams.map((team) => ({
-    ...team,
-    logourl: publicAssetUrl(team.logourl),
-    logodarkurl: publicAssetUrl(team.logodarkurl),
-    textlesslogourl: publicAssetUrl(team.textlesslogourl),
-    textlesslogodarkurl: publicAssetUrl(team.textlesslogodarkurl),
-  }));
 }
 
 export async function getTeamDetail(pageid: number) {
@@ -35,11 +27,14 @@ export async function getTeamDetail(pageid: number) {
   });
   if (!team) return null;
 
-  const matches = await prisma.match.findMany({
-    where: { match2opponents: { string_contains: team.name } as any },
-    orderBy: { date: "desc" },
-    take: 50,
-  });
+  const objectnames = await findObjectnamesInvolvingTeam(team.name, { finishedOnly: false });
+  const matches = objectnames.length
+    ? await prisma.match.findMany({
+        where: { objectname: { in: objectnames } },
+        orderBy: { date: "desc" },
+        take: 50,
+      })
+    : [];
 
   const relevant = matches.filter((m) => extractTeamNames(m.match2opponents).includes(team.name));
   const finished = relevant.filter((m) => m.finished);
@@ -56,10 +51,6 @@ export async function getTeamDetail(pageid: number) {
 
   return {
     ...team,
-    logourl: publicAssetUrl(team.logourl),
-    logodarkurl: publicAssetUrl(team.logodarkurl),
-    textlesslogourl: publicAssetUrl(team.textlesslogourl),
-    textlesslogodarkurl: publicAssetUrl(team.textlesslogodarkurl),
     stats: {
       wins,
       losses,
