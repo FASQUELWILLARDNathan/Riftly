@@ -191,19 +191,6 @@ export async function predictMatch(objectname: string): Promise<PredictionResult
   const confidenceA = Math.round((scoreA / total) * 100);
   const confidenceB = 100 - confidenceA;
 
-  console.log("DEBUG PREDICTION", {
-    teamA,
-    teamB,
-    seasonA,
-    seasonB,
-    wrA,
-    wrB,
-    h2hRateA,
-    scoreA,
-    scoreB,
-    confidenceA,
-    confidenceB,
-  });
   const favoredTeam = confidenceA >= 50 ? teamA : teamB;
   const confidence = confidenceA >= 50 ? confidenceA : 100 - confidenceA;
 

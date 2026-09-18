@@ -18,6 +18,36 @@ function mapTeamAssetUrls<T extends {
   };
 }
 
+function getMatchResult(
+  match: { match2opponents: unknown; winner: string | null },
+  teamName: string,
+): "win" | "loss" | null {
+  const opponents = Array.isArray(match.match2opponents)
+    ? match.match2opponents
+    : [];
+  const names = extractTeamNames(opponents);
+  const teamIndex = names.indexOf(teamName);
+
+  if (teamIndex < 0) return null;
+
+  const team = opponents[teamIndex] as { score?: unknown } | undefined;
+  const opponent = opponents.find((_, index) => index !== teamIndex) as
+    | { score?: unknown }
+    | undefined;
+  const teamScore = Number(team?.score);
+  const opponentScore = Number(opponent?.score);
+
+  if (Number.isFinite(teamScore) && Number.isFinite(opponentScore) && teamScore !== opponentScore) {
+    return teamScore > opponentScore ? "win" : "loss";
+  }
+
+  if (match.winner === String(teamIndex + 1)) return "win";
+  if (match.winner === "1" || match.winner === "2") return "loss";
+  if (match.winner?.trim() === teamName) return "win";
+
+  return null;
+}
+
 export async function searchTeams(query?: string, take = 20) {
   const teams = await prisma.team.findMany({
     where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
@@ -43,9 +73,69 @@ export async function getTeamDetail(pageid: number) {
     where: { pageid },
     include: { players: true },
   });
+
   if (!team) return null;
 
-  const objectnames = await findObjectnamesInvolvingTeam(team.name, { finishedOnly: false });
+  const currentTeam = team;
+
+  async function getStats(year?: number) {
+    const objectnames = await findObjectnamesInvolvingTeam(currentTeam.name, {
+      year,
+    });
+
+    if (!objectnames.length) {
+      return {
+        wins: 0,
+        losses: 0,
+        winrate: null,
+        matchesPlayed: 0,
+      };
+    }
+
+    const matches = await prisma.match.findMany({
+      where: {
+        objectname: { in: objectnames },
+      },
+    });
+
+    const relevant = matches.filter((m) =>
+      extractTeamNames(m.match2opponents).includes(currentTeam.name),
+    );
+
+    let wins = 0;
+    let losses = 0;
+
+    for (const m of relevant) {
+      const result = getMatchResult(m, currentTeam.name);
+      if (result === "win") wins += 1;
+      if (result === "loss") losses += 1;
+    }
+
+    const matchesPlayed = wins + losses;
+
+    return {
+      wins,
+      losses,
+      winrate:
+        matchesPlayed > 0
+          ? Math.round((wins / matchesPlayed) * 1000) / 10
+          : null,
+      matchesPlayed,
+    };
+  }
+
+  const currentYear = new Date().getFullYear();
+
+  const [currentYearStats, globalStats] = await Promise.all([
+    getStats(currentYear),
+    getStats(),
+  ]);
+
+  // Matchs récents : on garde ton comportement actuel
+  const objectnames = await findObjectnamesInvolvingTeam(team.name, {
+    finishedOnly: false,
+  });
+
   const matches = objectnames.length
     ? await prisma.match.findMany({
         where: { objectname: { in: objectnames } },
@@ -54,27 +144,18 @@ export async function getTeamDetail(pageid: number) {
       })
     : [];
 
-  const relevant = matches.filter((m) => extractTeamNames(m.match2opponents).includes(team.name));
-  const finished = relevant.filter((m) => m.finished);
-
-  let wins = 0;
-  let losses = 0;
-  for (const m of finished) {
-    const names = extractTeamNames(m.match2opponents);
-    const idx = names.indexOf(team.name);
-    if (m.winner === String(idx + 1)) wins += 1;
-    else losses += 1;
-  }
-  const winrate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 1000) / 10 : null;
+  const relevant = matches.filter((m) =>
+    extractTeamNames(m.match2opponents).includes(team.name),
+  );
 
   return {
     ...mapTeamAssetUrls(team),
+
     stats: {
-      wins,
-      losses,
-      winrate,
-      matchesPlayed: wins + losses,
+      currentYear: currentYearStats,
+      global: globalStats,
     },
+
     recentMatches: relevant.slice(0, 10).map((m) => ({
       id: m.objectname,
       date: m.date,

@@ -43,17 +43,13 @@ export function attachLiveMatchesWebSocket(server: Server) {
         try {
           const data = JSON.parse(msg.payload);
           broadcast({ type: "match_update", data });
-        } catch (err) {
-          console.error("Erreur parsing notification Postgres:", err);
-        }
+        } catch {}
       });
 
-      pgClient.on("error", (err) => {
-        console.error("Erreur connexion listener Postgres, reconnexion dans 10s:", err);
+      pgClient.on("error", () => {
         setTimeout(startListener, 10_000);
       });
     } catch (err) {
-      console.error("Impossible de se connecter au listener Postgres, retry dans 10s:", err);
       setTimeout(startListener, 10_000);
     }
   }

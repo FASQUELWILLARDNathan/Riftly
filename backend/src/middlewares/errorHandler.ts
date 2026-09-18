@@ -11,10 +11,6 @@ export function errorHandler(err: HttpError, req: Request, res: Response, _next:
   }
 
   const statusCode = err.statusCode ?? 500;
-  if (statusCode >= 500) {
-    console.error(`[${req.method} ${req.path}]`, err);
-  }
-
   res.status(statusCode).json({ error: err.message || "Erreur interne du serveur" });
 }
 

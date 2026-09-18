@@ -10,20 +10,33 @@ export type MatchStatusFilter = "live" | "upcoming" | "finished";
  * une chaîne simple — il faut caster en texte côté SQL comme le faisait le bot Python. */
 async function findObjectnamesInvolvingTeam(
   teamName: string,
-  opts: { finishedOnly?: boolean; excludeObjectname?: string } = {}
+  opts: {
+    finishedOnly?: boolean;
+    excludeObjectname?: string;
+    year?: number;
+  } = {},
 ): Promise<string[]> {
-
-  const currentYear = new Date().getFullYear();
-
   const conditions: string[] = [
     `match2opponents::text ILIKE $1`,
-    `pagename LIKE '%/${currentYear}/%'`
   ];
 
   const params: unknown[] = [`%${teamName}%`];
   let idx = 2;
 
-  if (opts.finishedOnly) conditions.push(`finished = true`);
+  if (opts.finishedOnly) {
+    conditions.push(`finished = true`);
+  }
+
+  if (opts.year) {
+    conditions.push(
+      `date >= $${idx} AND date < $${idx + 1}`,
+    );
+
+    params.push(new Date(`${opts.year}-01-01T00:00:00.000Z`));
+    params.push(new Date(`${opts.year + 1}-01-01T00:00:00.000Z`));
+
+    idx += 2;
+  }
 
   if (opts.excludeObjectname) {
     conditions.push(`objectname != $${idx}`);
@@ -31,20 +44,18 @@ async function findObjectnamesInvolvingTeam(
     idx++;
   }
 
-  const rows = await prisma.$queryRawUnsafe<{ objectname: string }[]>(
-    `SELECT objectname
-     FROM matches
-     WHERE ${conditions.join(" AND ")}
-     ORDER BY date DESC
-     LIMIT 200`,
-    ...params
+  const rows = await prisma.$queryRawUnsafe<
+    { objectname: string }[]
+  >(
+    `
+      SELECT objectname
+      FROM matches
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY date DESC
+      LIMIT 200
+    `,
+    ...params,
   );
-
-  console.log("DEBUG SQL BRUT", {
-    teamName,
-    paramsUsed: params,
-    rowsFound: rows.length
-  });
 
   return rows.map((r) => r.objectname);
 }

@@ -27,10 +27,18 @@ interface TeamDetail {
   status: string | null;
   players: TeamPlayer[];
   stats: {
-    wins: number;
-    losses: number;
-    winrate: number | null;
-    matchesPlayed: number;
+    currentYear: {
+      wins: number;
+      losses: number;
+      winrate: number | null;
+      matchesPlayed: number;
+    };
+    global: {
+      wins: number;
+      losses: number;
+      winrate: number | null;
+      matchesPlayed: number;
+    };
   };
   recentMatches: TeamMatch[];
 }
@@ -65,6 +73,8 @@ const pageDescription = computed(() => {
   return `Winrate, effectif et derniers matchs de ${team.value.name}${team.value.region ? ` (${team.value.region})` : ""}.`;
 });
 
+const currentYear = new Date().getFullYear();
+
 useSeoMeta({
   title: () => pageTitle.value,
   description: () => pageDescription.value,
@@ -97,17 +107,64 @@ useHead(() => ({
     </header>
 
     <div class="stats-row">
-      <div class="stat">
-        <span class="stat-value font-mono">{{ team.stats.wins }}</span>
-        <span class="stat-label">Victoires</span>
+      <!-- Année courante -->
+      <div class="stats-group">
+        <h2 class="stats-title font-display">
+          Winrate {{ currentYear }}
+        </h2>
+
+        <div class="stats-items">
+          <div class="stat">
+            <span class="stat-value font-mono">
+              {{ team.stats.currentYear.wins }}
+            </span>
+            <span class="stat-label">Victoires</span>
+          </div>
+
+          <div class="stat">
+            <span class="stat-value font-mono">
+              {{ team.stats.currentYear.losses }}
+            </span>
+            <span class="stat-label">Défaites</span>
+          </div>
+
+          <div class="stat">
+            <span class="stat-value font-mono accent">
+              {{ team.stats.currentYear.winrate ?? "—" }}%
+            </span>
+            <span class="stat-label">Winrate</span>
+          </div>
+        </div>
       </div>
-      <div class="stat">
-        <span class="stat-value font-mono">{{ team.stats.losses }}</span>
-        <span class="stat-label">Défaites</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value font-mono accent">{{ team.stats.winrate ?? "—" }}%</span>
-        <span class="stat-label">Winrate</span>
+
+      <!-- Global -->
+      <div class="stats-group">
+        <h2 class="stats-title font-display">
+          Winrate global
+        </h2>
+
+        <div class="stats-items">
+          <div class="stat">
+            <span class="stat-value font-mono">
+              {{ team.stats.global.wins }}
+            </span>
+            <span class="stat-label">Victoires</span>
+          </div>
+
+          <div class="stat">
+            <span class="stat-value font-mono">
+              {{ team.stats.global.losses }}
+            </span>
+            <span class="stat-label">Défaites</span>
+          </div>
+
+          <div class="stat">
+            <span class="stat-value font-mono accent">
+              {{ team.stats.global.winrate ?? "—" }}%
+            </span>
+            <span class="stat-label">Winrate</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -163,13 +220,34 @@ h1 {
 }
 
 .stats-row {
-  display: flex;
-  gap: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
   padding: 20px 0;
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 24px;
 }
+
+.stats-group {
+  min-width: 0;
+}
+
+.stats-group + .stats-group {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 24px;
+}
+
+.stats-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.stats-items {
+  display: flex;
+  gap: 32px;
+}
+
 .stat {
   display: flex;
   flex-direction: column;
@@ -244,9 +322,26 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .stats-group + .stats-group {
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-left: 0;
+    padding-top: 20px;
+  }
+
+  .stats-items {
+    gap: 24px;
+  }
+
   .card {
     padding: 18px;
   }
+
   .match-row {
     grid-template-columns: 1fr;
     gap: 4px;
