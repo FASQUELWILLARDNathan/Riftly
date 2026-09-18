@@ -1,9 +1,25 @@
 import { prisma } from "../../lib/prisma";
+import { publicAssetUrl } from "../../lib/assets";
 import { extractTeamNames } from "../../lib/region";
 import { findObjectnamesInvolvingTeam } from "../matches/matches.service";
 
+function mapTeamAssetUrls<T extends {
+  logourl: string | null;
+  logodarkurl: string | null;
+  textlesslogourl: string | null;
+  textlesslogodarkurl: string | null;
+}>(team: T) {
+  return {
+    ...team,
+    logourl: publicAssetUrl(team.logourl),
+    logodarkurl: publicAssetUrl(team.logodarkurl),
+    textlesslogourl: publicAssetUrl(team.textlesslogourl),
+    textlesslogodarkurl: publicAssetUrl(team.textlesslogodarkurl),
+  };
+}
+
 export async function searchTeams(query?: string, take = 20) {
-  return prisma.team.findMany({
+  const teams = await prisma.team.findMany({
     where: query ? { name: { contains: query, mode: "insensitive" } } : undefined,
     orderBy: { name: "asc" },
     take,
@@ -18,6 +34,8 @@ export async function searchTeams(query?: string, take = 20) {
       status: true,
     },
   });
+
+  return teams.map(mapTeamAssetUrls);
 }
 
 export async function getTeamDetail(pageid: number) {
@@ -50,7 +68,7 @@ export async function getTeamDetail(pageid: number) {
   const winrate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 1000) / 10 : null;
 
   return {
-    ...team,
+    ...mapTeamAssetUrls(team),
     stats: {
       wins,
       losses,
