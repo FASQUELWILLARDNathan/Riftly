@@ -18,7 +18,10 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   }
 
   try {
-    const payload = jwt.verify(token, env.jwtSecret) as { sub: string };
+    const payload = jwt.verify(token, env.jwtSecret);
+    if (typeof payload !== "object" || payload === null || typeof payload.sub !== "string" || !payload.sub) {
+      return res.status(401).json({ error: "Token invalide ou expiré" });
+    }
     req.userId = payload.sub;
     next();
   } catch {

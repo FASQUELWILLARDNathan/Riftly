@@ -8,11 +8,16 @@ export async function getMatches(req: Request, res: Response, next: NextFunction
       return res.status(400).json({ error: "status doit être 'live', 'upcoming' ou 'finished'" });
     }
 
+    const limit = req.query.limit === undefined ? undefined : Number(req.query.limit);
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 100)) {
+      return res.status(400).json({ error: "limit doit être un entier entre 1 et 100" });
+    }
+
     const matches = await matchesService.listMatches({
       statusFilter: status as matchesService.MatchStatusFilter,
       team: req.query.team as string | undefined,
       region: req.query.region as string | undefined,
-      take: req.query.limit ? Number(req.query.limit) : undefined,
+      take: limit,
     });
 
     res.json({ data: matches });

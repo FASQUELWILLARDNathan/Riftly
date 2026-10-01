@@ -25,6 +25,11 @@ function durationToMilliseconds(value: string): number {
 }
 
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? "7d";
+const jwtSecret = required("JWT_SECRET");
+
+if (process.env.NODE_ENV === "production" && jwtSecret === "change-me-in-production") {
+  throw new Error("JWT_SECRET doit être remplacé en production");
+}
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
@@ -36,7 +41,7 @@ export const env = {
   apiUrl: required("API_URL"),
   wsUrl: required("WS_URL"),
   databaseUrl: required("DATABASE_URL"),
-  jwtSecret: required("JWT_SECRET"),
+  jwtSecret,
   jwtExpiresIn,
   jwtCookieMaxAge: durationToMilliseconds(jwtExpiresIn),
 };

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as authService from "./auth.service";
 import { env } from "../../config/env";
+import { passwordSchema } from "../../lib/password";
 
 const sessionCookieOptions = {
   httpOnly: true,
@@ -14,7 +15,7 @@ const sessionCookieOptions = {
 const registerSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3).max(32),
-  password: z.string().min(8),
+  password: passwordSchema,
 });
 
 const loginSchema = z.object({

@@ -103,7 +103,14 @@ async function submitPassword() {
       </label>
       <label>
         Nouveau mot de passe
-        <input v-model="newPassword" type="password" required minlength="8" />
+        <input
+          v-model="newPassword"
+          type="password"
+          required
+          minlength="12"
+          pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}"
+          title="12 caractères minimum, avec une majuscule, une minuscule, un chiffre et un caractère spécial."
+        />
       </label>
 
       <p v-if="passwordError" class="error">{{ passwordError }}</p>

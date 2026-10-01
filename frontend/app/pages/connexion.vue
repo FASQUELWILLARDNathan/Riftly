@@ -85,7 +85,15 @@ async function submit() {
         </label>
         <label>
           Mot de passe
-          <input v-model="password" type="password" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" minlength="8" required />
+          <input
+            v-model="password"
+            type="password"
+            :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
+            :minlength="mode === 'register' ? 12 : undefined"
+            :pattern="mode === 'register' ? '(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}' : undefined"
+            :title="mode === 'register' ? '12 caractères minimum, avec une majuscule, une minuscule, un chiffre et un caractère spécial.' : undefined"
+            required
+          />
         </label>
 
         <p v-if="error" class="error" role="alert">{{ error }}</p>

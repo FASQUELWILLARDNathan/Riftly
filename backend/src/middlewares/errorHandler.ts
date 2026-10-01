@@ -11,7 +11,10 @@ export function errorHandler(err: HttpError, req: Request, res: Response, _next:
   }
 
   const statusCode = err.statusCode ?? 500;
-  res.status(statusCode).json({ error: err.message || "Erreur interne du serveur" });
+  const message = statusCode >= 500 && process.env.NODE_ENV === "production"
+    ? "Erreur interne du serveur"
+    : err.message || "Erreur interne du serveur";
+  res.status(statusCode).json({ error: message });
 }
 
 export function notFoundHandler(req: Request, res: Response) {

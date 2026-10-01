@@ -1,6 +1,7 @@
 let apiUrl: string | null = null;
 let apiOrigin: string | null = null;
 const legacyAuthKey = ["lol", "-esports-auth-token"].join("");
+let csrfToken: string | null = null;
 
 function clearLegacyAuthStorage() {
   if (!import.meta.client) return;
@@ -30,6 +31,18 @@ function getApiUrl() {
   return apiUrl;
 }
 
+async function getCsrfToken(forceRefresh = false): Promise<string> {
+  if (csrfToken && !forceRefresh) return csrfToken;
+
+  const response = await fetch(`${getApiUrl()}/auth/csrf`, { credentials: "include" });
+  if (!response.ok) throw new ApiError("Impossible d'initialiser la protection CSRF", response.status);
+  const body = (await response.json()) as { data?: { token?: string } };
+  if (!body.data?.token) throw new ApiError("Réponse CSRF invalide", response.status);
+
+  csrfToken = body.data.token;
+  return csrfToken;
+}
+
 export function assetUrl(url: string | null): string | null {
   if (!url || !url.startsWith("/")) return url;
   if (!apiOrigin) throw new Error("Client API non initialisé");
@@ -37,13 +50,19 @@ export function assetUrl(url: string | null): string | null {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+  const isMutatingRequest = !["GET", "HEAD", "OPTIONS"].includes(method);
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+
+  if (isMutatingRequest) {
+    headers.set("X-CSRF-Token", await getCsrfToken());
+  }
+
   const res = await fetch(`${getApiUrl()}${path}`, {
     ...options,
     credentials: "include", // envoie/reçoit le cookie httpOnly de session
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {

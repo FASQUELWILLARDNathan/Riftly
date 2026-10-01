@@ -2,6 +2,7 @@ import { Response, NextFunction } from "express";
 import { z } from "zod";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 import * as usersService from "./users.service";
+import { passwordSchema } from "../../lib/password";
 
 const updateProfileSchema = z.object({
   username: z.string().min(3).max(32).optional(),
@@ -10,7 +11,7 @@ const updateProfileSchema = z.object({
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
+  newPassword: passwordSchema,
 });
 
 export async function getMe(req: AuthenticatedRequest, res: Response, next: NextFunction) {
