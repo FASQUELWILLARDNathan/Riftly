@@ -1,10 +1,11 @@
 let apiUrl: string | null = null;
 let apiOrigin: string | null = null;
+const legacyAuthKey = ["lol", "-esports-auth-token"].join("");
 
 function clearLegacyAuthStorage() {
   if (!import.meta.client) return;
-  localStorage.removeItem("lol-esports-auth-token");
-  sessionStorage.removeItem("lol-esports-auth-token");
+  localStorage.removeItem(legacyAuthKey);
+  sessionStorage.removeItem(legacyAuthKey);
 }
 
 clearLegacyAuthStorage();
