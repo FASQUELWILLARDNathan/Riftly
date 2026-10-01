@@ -8,6 +8,24 @@ function required(name: string): string {
   return value;
 }
 
+function durationToMilliseconds(value: string): number {
+  const match = value.trim().match(/^(\d+)\s*(s|m|h|d|w)?$/i);
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
+
+  const amount = Number(match[1]);
+  const multipliers: Record<string, number> = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  return amount * (multipliers[match[2]?.toLowerCase() ?? "s"] ?? 1000);
+}
+
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? "7d";
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   host: required("HOST"),
@@ -19,5 +37,6 @@ export const env = {
   wsUrl: required("WS_URL"),
   databaseUrl: required("DATABASE_URL"),
   jwtSecret: required("JWT_SECRET"),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  jwtExpiresIn,
+  jwtCookieMaxAge: durationToMilliseconds(jwtExpiresIn),
 };

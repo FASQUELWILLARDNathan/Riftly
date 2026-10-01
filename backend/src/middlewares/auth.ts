@@ -7,9 +7,12 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  const cookieToken = req.headers.cookie?.match(/(?:^|; )session=([^;]+)/)?.[1];
-  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : cookieToken;
+  const cookieToken = req.headers.cookie
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("session="))
+    ?.slice("session=".length);
+  const token = cookieToken ? decodeURIComponent(cookieToken) : undefined;
   if (!token) {
     return res.status(401).json({ error: "Authentification requise" });
   }

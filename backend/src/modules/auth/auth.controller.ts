@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as authService from "./auth.service";
+import { env } from "../../config/env";
 
 const sessionCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: env.nodeEnv === "production",
+  maxAge: env.jwtCookieMaxAge,
+  path: "/",
 };
 
 const registerSchema = z.object({
@@ -25,7 +27,7 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
     const body = registerSchema.parse(req.body);
     const result = await authService.register(body.email, body.username, body.password);
     res.cookie("session", result.token, sessionCookieOptions);
-    res.status(201).json({ data: result });
+    res.status(201).json({ data: { user: result.user } });
   } catch (err) {
     next(err);
   }
@@ -36,7 +38,7 @@ export async function postLogin(req: Request, res: Response, next: NextFunction)
     const body = loginSchema.parse(req.body);
     const result = await authService.login(body.email, body.password);
     res.cookie("session", result.token, sessionCookieOptions);
-    res.json({ data: result });
+    res.json({ data: { user: result.user } });
   } catch (err) {
     next(err);
   }

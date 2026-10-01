@@ -1,7 +1,13 @@
-const TOKEN_KEY = "lol-esports-auth-token";
 let apiUrl: string | null = null;
 let apiOrigin: string | null = null;
-let authToken = import.meta.client ? localStorage.getItem(TOKEN_KEY) : null;
+
+function clearLegacyAuthStorage() {
+  if (!import.meta.client) return;
+  localStorage.removeItem("lol-esports-auth-token");
+  sessionStorage.removeItem("lol-esports-auth-token");
+}
+
+clearLegacyAuthStorage();
 
 export class ApiError extends Error {
   constructor(
@@ -23,13 +29,6 @@ function getApiUrl() {
   return apiUrl;
 }
 
-function setAuthToken(token: string | null) {
-  authToken = token;
-  if (!import.meta.client) return;
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
-}
-
 export function assetUrl(url: string | null): string | null {
   if (!url || !url.startsWith("/")) return url;
   if (!apiOrigin) throw new Error("Client API non initialisé");
@@ -42,7 +41,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: "include", // envoie/reçoit le cookie httpOnly de session
     headers: {
       "Content-Type": "application/json",
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...options.headers,
     },
   });
@@ -114,24 +112,23 @@ export const api = {
   },
   auth: {
     login: async (email: string, password: string) => {
-      const result = await request<{ data: { user: any; token: string } }>(`/auth/login`, {
+      return request<{ data: { user: any } }>(`/auth/login`, {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      setAuthToken(result.data.token);
-      return result;
     },
     register: async (email: string, username: string, password: string) => {
-      const result = await request<{ data: { user: any; token: string } }>(`/auth/register`, {
+      return request<{ data: { user: any } }>(`/auth/register`, {
         method: "POST",
         body: JSON.stringify({ email, username, password }),
       });
-      setAuthToken(result.data.token);
-      return result;
     },
     logout: async () => {
-      await request<void>(`/auth/logout`, { method: "POST" });
-      setAuthToken(null);
+      try {
+        await request<void>(`/auth/logout`, { method: "POST" });
+      } finally {
+        clearLegacyAuthStorage();
+      }
     },
   },
   users: {
