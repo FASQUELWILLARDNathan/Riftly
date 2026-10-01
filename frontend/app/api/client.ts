@@ -1,3 +1,8 @@
+// État module-level, volontairement PAS en useState(). Ça ne pose
+// problème que si un jour un appel api.* est fait en top-level d'un
+// <script setup> (donc exécuté côté SSR) — actuellement aucun ne l'est,
+// tous passent par onMounted/interaction utilisateur. Si ça change,
+// migrer csrfToken vers useState() pour éviter un partage entre requêtes.
 let apiUrl: string | null = null;
 let apiOrigin: string | null = null;
 const legacyAuthKey = ["lol", "-esports-auth-token"].join("");
