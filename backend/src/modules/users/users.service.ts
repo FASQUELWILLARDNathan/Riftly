@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma";
+import { revokeUserSessions } from "../auth/auth.service";
 
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({
@@ -86,4 +87,5 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  await revokeUserSessions(userId);
 }

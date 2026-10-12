@@ -15,9 +15,22 @@ import usersRoutes from "./modules/users/users.routes";
 export const app = express();
 
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
 
-app.use(cors({ origin: env.corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(cors({
+  origin: (origin, callback) => callback(null, !origin || origin === env.corsOrigin ? origin ?? env.corsOrigin : false),
+  credentials: true,
+}));
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "DENY");
+  const websocketOrigin = new URL(env.wsUrl).origin;
+  res.setHeader("Content-Security-Policy", `default-src 'self'; connect-src 'self' ${env.corsOrigin} ${websocketOrigin}; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'`);
+  if (env.secureCookies) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+app.use(express.json({ limit: "1mb" }));
 app.use(csrfProtection);
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));

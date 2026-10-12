@@ -16,7 +16,12 @@ export function attachLiveMatchesWebSocket(server: Server) {
 
   const clients = new Set<WebSocket>();
 
-  wss.on("connection", (socket) => {
+  wss.on("connection", (socket, request) => {
+    const origin = request.headers.origin;
+    if (origin && origin !== env.corsOrigin) {
+      socket.close(1008, "Origine non autorisée");
+      return;
+    }
     clients.add(socket);
     socket.on("close", () => clients.delete(socket));
   });

@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Match {
+  pageid             BigInt
+  pagename           String?
+  namespace          Int?
+  objectname         String          @id @unique(map: "unique_objectname")
+  match2id           String?
+  match2bracketid    String?
+  status             String?
+  winner             String?
+  walkover           String?
+  resulttype         String?
+  finished           Boolean?
+  mode               String?
+  type               String?
+  section            String?
+  game               String?
+  patch              String?
+  links              Json?
+  bestof             Int?
+  date               DateTime?       @db.Timestamp(6)
+  dateexact          Boolean?
+  stream             Json?
+  vod                String?
+  tournament         String?
+  parent             String?
+  tickername         String?
+  shortname          String?
+  series             String?
+  icon               String?
+  iconurl            String?
+  icondark           String?
+  icondarkurl        String?
+  liquipediatier     String?
+  liquipediatiertype String?
+  publishertier      String?
+  extradata          Json?
+  match2bracketdata  Json?
+  match2games        Json?
+  match2opponents    Json?
+  webPredictions     WebPrediction[]
+
+  @@map("matches")
+}
+
+model Team {
+  pageid              Int        @id
+  pagename            String     @db.VarChar(255)
+  namespace           Int?
+  objectname          String?    @db.VarChar(255)
+  name                String     @db.VarChar(255)
+  locations           Json?      @db.Json
+  region              String?    @db.VarChar(100)
+  logo                String?    @db.VarChar(255)
+  logourl             String?    @db.VarChar(255)
+  logodark            String?    @db.VarChar(255)
+  logodarkurl         String?    @db.VarChar(255)
+  textlesslogourl     String?    @db.VarChar(255)
+  textlesslogodarkurl String?    @db.VarChar(255)
+  status              String?    @db.VarChar(50)
+  createdate          DateTime?  @db.Date
+  disbanddate         DateTime?  @db.Date
+  earnings            Decimal?   @db.Decimal(15, 2)
+  earningsbyyear      Json?      @db.Json
+  template            String?    @db.VarChar(255)
+  links               Json?      @db.Json
+  extradata           Json?      @db.Json
+  players             Player[]
+  favorites           Favorite[]
+
+  @@map("team")
+}
+
+model Player {
+  pageid         BigInt    @id
+  pagename       String
+  namespace      Int
+  objectname     String
+  id             String
+  alternateid    String?
+  name           String
+  localizedname  String?
+  type           String?
+  nationality    String?
+  nationality2   String?
+  nationality3   String?
+  region         String?
+  birthdate      DateTime? @db.Date
+  deathdate      DateTime? @db.Date
+  teampagename   String?
+  teamtemplate   String?
+  links          Json?
+  status         String?
+  earnings       Decimal?  @db.Decimal
+  earningsbyyear Json?
+  extradata      Json?
+  game           String?   @db.VarChar(50)
+  pageidteam     Int?
+  team           Team?     @relation(fields: [pageidteam], references: [pageid], onDelete: Cascade, onUpdate: NoAction, map: "fk_pageidteam")
+
+  @@map("players")
+}
+
+model GuildConfig {
+  guildId                  BigInt   @id @map("guild_id")
+  notificationsChannelId   BigInt   @map("notifications_channel_id")
+  isActive                 Boolean? @default(true) @map("is_active")
+  watchedTeam              String?  @map("watched_team") @db.VarChar(255)
+  matchUpdateNotifications Boolean? @default(true) @map("match_update_notifications")
+
+  @@map("guild_configs")
+}
+
+model Prediction {
+  userId   BigInt    @map("user_id")
+  matchId  String    @map("match_id")
+  choix    Int
+  jeu      String
+  username String?
+  voteTime DateTime? @default(now()) @map("vote_time") @db.Timestamp(6)
+
+  @@id([userId, matchId])
+  @@map("prediction")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  teamId    Int      @map("team_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  team      Team     @relation(fields: [teamId], references: [pageid], onDelete: Cascade, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, teamId])
+  @@map("web_favorites")
+}
+
+model WebPrediction {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  matchObjectId   String   @map("match_objectname")
+  predictedWinner Int      @map("predicted_winner")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  match           Match    @relation(fields: [matchObjectId], references: [objectname], onDelete: Cascade, onUpdate: NoAction)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, matchObjectId])
+  @@map("web_predictions")
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  username     String          @unique
+  passwordHash String          @map("password_hash")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  favorites    Favorite[]
+  predictions  WebPrediction[]
+  sessions     Session[]
+
+  @@map("web_users")
+}
+
+model Session {
+  sid       String    @id @db.VarChar(64)
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at") @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamp(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("web_sessions")
+}

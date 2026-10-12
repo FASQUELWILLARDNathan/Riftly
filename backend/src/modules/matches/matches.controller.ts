@@ -1,22 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import * as matchesService from "./matches.service";
+import { z } from "zod";
+
+const querySchema = z.object({
+  status: z.enum(["live", "upcoming", "finished"]).default("upcoming"),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  team: z.string().trim().max(100).optional(),
+  region: z.string().trim().max(100).optional(),
+}).strict();
 
 export async function getMatches(req: Request, res: Response, next: NextFunction) {
   try {
-    const status = (req.query.status as string) ?? "upcoming";
-    if (!["live", "upcoming", "finished"].includes(status)) {
-      return res.status(400).json({ error: "status doit être 'live', 'upcoming' ou 'finished'" });
-    }
-
-    const limit = req.query.limit === undefined ? undefined : Number(req.query.limit);
-    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 100)) {
-      return res.status(400).json({ error: "limit doit être un entier entre 1 et 100" });
-    }
+    const { status, limit, team, region } = querySchema.parse(req.query);
 
     const matches = await matchesService.listMatches({
       statusFilter: status as matchesService.MatchStatusFilter,
-      team: req.query.team as string | undefined,
-      region: req.query.region as string | undefined,
+      team,
+      region,
       take: limit,
     });
 

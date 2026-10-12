@@ -26,9 +26,10 @@ function durationToMilliseconds(value: string): number {
 
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN ?? "7d";
 const jwtSecret = required("JWT_SECRET");
+const isProduction = process.env.NODE_ENV === "production";
 
-if (process.env.NODE_ENV === "production" && jwtSecret === "change-me-in-production") {
-  throw new Error("JWT_SECRET doit être remplacé en production");
+if (isProduction && (jwtSecret === "change-me-in-production" || Buffer.byteLength(jwtSecret, "utf8") < 32)) {
+  throw new Error("JWT_SECRET doit contenir au moins 32 octets aléatoires en production");
 }
 
 export const env = {
@@ -44,4 +45,7 @@ export const env = {
   jwtSecret,
   jwtExpiresIn,
   jwtCookieMaxAge: durationToMilliseconds(jwtExpiresIn),
+  secureCookies: isProduction,
+  sessionCookieName: isProduction ? "__Host-session" : "session",
+  csrfCookieName: isProduction ? "__Host-csrf_token" : "csrf_token",
 };

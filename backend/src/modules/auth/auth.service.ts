@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
+import { randomBytes } from "crypto";
 import { prisma } from "../../lib/prisma";
 import { env } from "../../config/env";
 
@@ -15,7 +16,7 @@ export async function register(email: string, username: string, password: string
     select: { id: true, email: true, username: true, createdAt: true },
   });
 
-  return { user, token: signToken(user.id) };
+  return { user, token: await createSessionToken(user.id) };
 }
 
 export async function login(email: string, password: string) {
@@ -31,10 +32,37 @@ export async function login(email: string, password: string) {
 
   return {
     user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
-    token: signToken(user.id),
+    token: await createSessionToken(user.id),
   };
 }
 
-function signToken(userId: string) {
-  return jwt.sign({ sub: userId }, env.jwtSecret, { expiresIn: env.jwtExpiresIn as SignOptions["expiresIn"] });
+export function getSessionId(token: string): string | null {
+  try {
+    const payload = jwt.verify(token, env.jwtSecret, { algorithms: ["HS256"] });
+    return typeof payload === "object" && payload !== null && typeof payload.sid === "string" ? payload.sid : null;
+  } catch {
+    return null;
+  }
+}
+
+async function createSessionToken(userId: string) {
+  const sid = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + env.jwtCookieMaxAge);
+  await prisma.session.create({ data: { sid, userId, expiresAt } });
+  return jwt.sign({ sub: userId, sid }, env.jwtSecret, {
+    algorithm: "HS256",
+    expiresIn: env.jwtExpiresIn as SignOptions["expiresIn"],
+  });
+}
+
+export async function revokeSession(sid: string) {
+  await prisma.session.updateMany({ where: { sid, revokedAt: null }, data: { revokedAt: new Date() } });
+}
+
+export async function revokeUserSessions(userId: string) {
+  await prisma.session.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+}
+
+export async function purgeExpiredSessions() {
+  await prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 }

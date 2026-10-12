@@ -59,6 +59,7 @@ Riftly/
   cd backend
   npm install
   npm run prisma:generate
+  npm run prisma:migrate:deploy
   npm run dev
   ```
 
@@ -72,6 +73,28 @@ Riftly/
 
 The frontend runs on `http://localhost:3000` and the API runs on
 `http://localhost:4000` by default.
+
+### Security migration deployment
+
+Before applying the session migration in production, create a PostgreSQL backup:
+
+```bash
+pg_dump -Fc -d "$DATABASE_URL" -f riftdata-before-sessions.dump
+```
+
+Then deploy the additive migration and restart the application through the
+normal release process (these commands are not run automatically):
+
+```bash
+cd backend
+npm run prisma:migrate:deploy
+npm run prisma:generate
+```
+
+All existing users and data are preserved. Existing JWTs without a `sid` are
+rejected after deployment and users must sign in again. To roll back the
+application, redeploy the previous application version; keep the new
+`web_sessions` table in place unless a database rollback has been reviewed.
 
 ### Run with Docker
 

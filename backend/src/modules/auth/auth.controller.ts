@@ -7,19 +7,19 @@ import { passwordSchema } from "../../lib/password";
 const sessionCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: env.nodeEnv === "production",
+  secure: env.secureCookies,
   maxAge: env.jwtCookieMaxAge,
   path: "/",
 };
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  username: z.string().min(3).max(32),
+  email: z.string().trim().toLowerCase().email(),
+  username: z.string().trim().min(3).max(32),
   password: passwordSchema,
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 
@@ -27,7 +27,7 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
   try {
     const body = registerSchema.parse(req.body);
     const result = await authService.register(body.email, body.username, body.password);
-    res.cookie("session", result.token, sessionCookieOptions);
+    res.cookie(env.sessionCookieName, result.token, sessionCookieOptions);
     res.status(201).json({ data: { user: result.user } });
   } catch (err) {
     next(err);
@@ -38,14 +38,24 @@ export async function postLogin(req: Request, res: Response, next: NextFunction)
   try {
     const body = loginSchema.parse(req.body);
     const result = await authService.login(body.email, body.password);
-    res.cookie("session", result.token, sessionCookieOptions);
+    res.cookie(env.sessionCookieName, result.token, sessionCookieOptions);
     res.json({ data: { user: result.user } });
   } catch (err) {
     next(err);
   }
 }
 
-export function postLogout(_req: Request, res: Response) {
-  res.clearCookie("session", sessionCookieOptions);
-  res.status(204).send();
+export async function postLogout(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.headers.cookie?.split(";").map((part) => part.trim())
+      .find((part) => part.startsWith(`${env.sessionCookieName}=`))?.slice(env.sessionCookieName.length + 1);
+    if (token) {
+      const sid = authService.getSessionId(decodeURIComponent(token));
+      if (sid) await authService.revokeSession(sid);
+    }
+    res.clearCookie(env.sessionCookieName, sessionCookieOptions);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
 }

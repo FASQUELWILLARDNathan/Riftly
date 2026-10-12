@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test src/middlewares/csrf.test.ts",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:pull": "prisma db pull",
     "prisma:studio": "prisma studio"
   },
